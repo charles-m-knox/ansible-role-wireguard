@@ -1,0 +1,21 @@
+#!/sbin/openrc-run
+
+# openrc/alpine only
+# https://serverfault.com/a/1085981
+# place this at /etc/init.d/{{ item.name }}
+# rc-update add {{ item.name }} default
+
+description="WireGuard Quick for {{ item.name }}"
+
+depend() {
+    need localmount
+    need net
+}
+
+start() {
+    wg-quick up {{ item.name }}
+}
+
+stop() {
+    wg-quick down {{ item.name }}
+}

@@ -1,0 +1,144 @@
+# SPDX-License-Identifier: MIT-0
+---
+
+- name: Install wireguard
+  ansible.builtin.package:
+    name: wireguard-tools
+  become: true
+  when:
+    - install_wireguard
+    - ansible_pkg_mgr in ['apk','dnf','apt','pacman']
+  tags:
+    - wireguard
+    - wireguard-package-install
+
+- name: Stop & disable all wireguard connection services (systemd)
+  ansible.builtin.service:
+    name: "wg-quick@{{ item.name }}"
+    enabled: false
+    state: stopped
+  become: true
+  loop: "{{ wireguard_configs }}"
+  when:
+    - install_wireguard
+    - ansible_service_mgr == 'systemd'
+  tags:
+    - wireguard
+
+- name: Stop & disable all wireguard connection services (openrc)
+  sansible.builtin.service:
+    name: "{{ item.name }}"
+    enabled: false
+    state: stopped
+  become: true
+  loop: "{{ wireguard_configs }}"
+  when:
+    - install_wireguard
+    - ansible_service_mgr == 'openrc'
+  tags:
+    - wireguard
+
+- name: Stop any lingering wireguard connections, if running  # noqa no-changed-when
+  ansible.builtin.shell:
+    cmd: wg-quick down {{ item.name }} || true
+  become: true
+  loop: "{{ wireguard_configs }}"
+  when:
+    - install_wireguard
+  tags:
+    - wireguard
+
+- name: Create systemd-networkd conf.d directory
+  ansible.builtin.file:
+    path: "/etc/systemd/networkd.conf.d"
+    state: directory
+    mode: "0755"
+  become: true
+  when:
+    - install_wireguard
+    - ansible_service_mgr == 'systemd'
+  tags:
+    - wireguard
+
+- name: Disable foreign route management if systemd-networkd is in use
+  ansible.builtin.template:
+    dest: "/etc/systemd/networkd.conf.d/00_disable_foreign_route_policy_mgmt.conf"
+    src: "systemd-networkd/00_disable_foreign_route_policy_mgmt.conf"
+    mode: "0644"
+  become: true
+  when:
+    - install_wireguard
+    - ansible_service_mgr == 'systemd'
+  tags:
+    - wireguard
+
+- name: Restart systemd-networkd service
+  ansible.builtin.systemd_service:
+    service: systemd-networkd
+    state: restarted
+    daemon_reload: true
+  become: true
+  when:
+    - install_wireguard
+    - ansible_service_mgr == 'systemd'
+  tags:
+    - wireguard
+
+- name: Add wireguard configs
+  ansible.builtin.template:
+    dest: "{{ item.path }}"
+    src: "wireguard/wireguard.conf"
+    mode: "0640"
+  become: "{{ item.become }}"
+  loop: "{{ wireguard_configs }}"
+  when:
+    - install_wireguard
+  tags:
+    - wireguard
+
+- name: Set up all wireguard services (openrc)
+  ansible.builtin.template:
+    dest: "/etc/init.d/{{ item.name }}"
+    src: wireguard/wireguard-alpine
+    mode: "0755"
+  become: true
+  loop: "{{ wireguard_configs }}"
+  when:
+    - install_wireguard
+    - ansible_service_mgr == 'openrc'
+  tags:
+    - wireguard
+
+# equivalent command line:
+# rc-service syncthing wg-quick || true; rc-update add wg-quick default && rc-service wg-quick start
+- name: Start and enable all wireguard services (openrc)
+  ansible.builtin.service:
+    name: "{{ item.name }}"
+    enabled: "{{ item.enabled }}"
+    state: "{{ item.state }}"
+    runlevel: default
+  become: true
+  loop: "{{ wireguard_configs }}"
+  when:
+    - install_wireguard
+    - ansible_service_mgr == 'openrc'
+  tags:
+    - wireguard
+
+# equivalent command line:
+# systemctl disable --now wg-quick@wg0.service; systemctl enable --now wg-quick@wg0.service
+#
+# side note: when installing wireguard on a systemd system, it ships with
+# something like "wg-quick@wgX.service", so we just use that
+- name: Start and enable all wireguard services (systemd)
+  ansible.builtin.service:
+    name: "wg-quick@{{ item.name }}"
+    enabled: "{{ item.enabled }}"
+    state: "{{ item.state }}"
+  become: "{{ item.become }}"
+  loop: "{{ wireguard_configs }}"
+  when:
+    - install_wireguard
+    - ansible_service_mgr == 'systemd'
+  tags:
+    - wireguard
