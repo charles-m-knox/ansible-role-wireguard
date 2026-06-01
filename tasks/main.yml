@@ -48,6 +48,13 @@
   tags:
     - wireguard
 
+- name: Check if NetworkManager exists
+  ansible.builtin.stat:
+    path: "/etc/NetworkManager"
+  register: networkmanager_installed
+  tags:
+    - dns
+
 - name: Create systemd-networkd conf.d directory
   ansible.builtin.file:
     path: "/etc/systemd/networkd.conf.d"
@@ -57,6 +64,7 @@
   when:
     - install_wireguard
     - ansible_service_mgr == 'systemd'
+    - not networkmanager_installed.stat.exists
   tags:
     - wireguard
 
@@ -69,6 +77,7 @@
   when:
     - install_wireguard
     - ansible_service_mgr == 'systemd'
+    - not networkmanager_installed.stat.exists
   tags:
     - wireguard
 
@@ -81,6 +90,7 @@
   when:
     - install_wireguard
     - ansible_service_mgr == 'systemd'
+    - not networkmanager_installed.stat.exists
   tags:
     - wireguard
 
