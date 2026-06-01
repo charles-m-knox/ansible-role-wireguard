@@ -7,7 +7,7 @@
   become: true
   when:
     - install_wireguard
-    - ansible_pkg_mgr in ['apk','dnf','apt','pacman']
+    - ansible_facts['pkg_mgr'] in ['apk', 'dnf', 'apt', 'pacman']
   tags:
     - wireguard
     - wireguard-package-install
@@ -21,7 +21,7 @@
   loop: "{{ wireguard_configs }}"
   when:
     - install_wireguard
-    - ansible_service_mgr == 'systemd'
+    - ansible_facts['service_mgr'] == 'systemd'
   tags:
     - wireguard
 
@@ -34,7 +34,7 @@
   loop: "{{ wireguard_configs }}"
   when:
     - install_wireguard
-    - ansible_service_mgr == 'openrc'
+    - ansible_facts['service_mgr'] == 'openrc'
   tags:
     - wireguard
 
@@ -63,7 +63,7 @@
   become: true
   when:
     - install_wireguard
-    - ansible_service_mgr == 'systemd'
+    - ansible_facts['service_mgr'] == 'systemd'
     - not networkmanager_installed.stat.exists
   tags:
     - wireguard
@@ -76,7 +76,7 @@
   become: true
   when:
     - install_wireguard
-    - ansible_service_mgr == 'systemd'
+    - ansible_facts['service_mgr'] == 'systemd'
     - not networkmanager_installed.stat.exists
   tags:
     - wireguard
@@ -89,7 +89,7 @@
   become: true
   when:
     - install_wireguard
-    - ansible_service_mgr == 'systemd'
+    - ansible_facts['service_mgr'] == 'systemd'
     - not networkmanager_installed.stat.exists
   tags:
     - wireguard
@@ -115,7 +115,7 @@
   loop: "{{ wireguard_configs }}"
   when:
     - install_wireguard
-    - ansible_service_mgr == 'openrc'
+    - ansible_facts['service_mgr'] == 'openrc'
   tags:
     - wireguard
 
@@ -131,7 +131,7 @@
   loop: "{{ wireguard_configs }}"
   when:
     - install_wireguard
-    - ansible_service_mgr == 'openrc'
+    - ansible_facts['service_mgr'] == 'openrc'
   tags:
     - wireguard
 
@@ -149,6 +149,6 @@
   loop: "{{ wireguard_configs }}"
   when:
     - install_wireguard
-    - ansible_service_mgr == 'systemd'
+    - ansible_facts['service_mgr'] == 'systemd'
   tags:
     - wireguard
