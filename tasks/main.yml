@@ -54,6 +54,7 @@
   register: networkmanager_installed
   tags:
     - dns
+    - wireguard
 
 - name: Create systemd-networkd conf.d directory
   ansible.builtin.file:
